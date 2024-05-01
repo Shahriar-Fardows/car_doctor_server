@@ -1,13 +1,22 @@
 const express = require("express");
 const cors = require("cors");
+const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser')
+
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 require("dotenv").config();
 const app = express();
 const port = process.env.PORT || 5000;
 
 // middleware
-app.use(cors());
+app.use(cors(
+  {
+    origin: ['http://localhost:5173'],
+    credentials: true
+  }
+));
 app.use(express.json());
+app.use(cookieParser());
 
 const uri = `mongodb+srv://${process.env.USER}:${process.env.PASS}@phero.sfyzbqi.mongodb.net/?retryWrites=true&w=majority&appName=phero`;
 
@@ -29,7 +38,26 @@ async function run() {
     const database = client.db("phero").collection("project-1");
     const booking = client.db("phero").collection("booking");
 
+    // JWT Token api 
 
+    app.post('/jwt' , ( req , res) => {
+      const user = req.body;
+      console.log(user);
+      const token = jwt.sign( user, 'secret', { expiresIn: '1h' });
+      console.log(token);
+      res
+      .cookie('token' , token , {
+        httpOnly: true,
+        secure: true,
+        sameSite: "none"
+      })
+      .send({ success : true })
+    })
+
+    app.post('/logOut' , (req , res) => {
+      const user = req.body;
+      res.clearCookie('token',{maxAge : 0}).send({success : true})
+    } )
 
  
     // All data api
